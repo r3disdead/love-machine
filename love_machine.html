@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>LOVE MACHINE – FLUIDE ET LARGE</title>
+<style>
+    body{margin:0;background:#000;color:#fff;font-family:'Comic Sans MS',cursive;height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+    h1{margin:20px 0 10px;text-align:center;font-size:120px;color:#ff1493;text-shadow:0 0 50px #ff1493,0 0 100px #ff69b4;letter-spacing:12px;}
+
+    #input-zone{position:absolute;top:70px;right:30px;display:flex;flex-direction:column;gap:12px;align-items:flex-end;z-index:999;}
+    label{font-size:22px;color:#ff69b4;}
+    input{background:#111;border:3px solid #ff1493;padding:14px;font-size:18px;width:540px;color:#ff69b4;text-align:center;border-radius:12px;}
+    button{background:#ff1493;color:#000;border:none;padding:14px 32px;border-radius:12px;font-weight:bold;cursor:pointer;font-size:16px;}
+    button:hover{background:#ff69b4;}
+
+    #main{flex:1;display:flex;align-items:center;justify-content:center;position:relative;}
+
+    /* Instructions collées au cadre */
+    #instructions{
+        font-size:26px;color:#ff69b4;line-height:1.9;
+        text-shadow:0 0 18px #ff1493;
+        opacity:0;
+        transition:opacity 0.7s;
+        position:absolute;
+        right:50%;
+        margin-right:250px;
+        top:50%;
+        transform:translateY(-50%);
+        text-align:right;
+    }
+    #instructions.visible{opacity:1;}
+
+    #game-frame{width:416px;height:316px;position:relative;}
+    #game{
+        position:absolute;top:8px;left:8px;width:400px;height:300px;
+        border:8px solid #ff1493;border-radius:28px;overflow:hidden;
+        box-shadow:0 0 90px #ff1493,inset 0 0 70px rgba(255,20,147,0.8);
+    }
+    #scene-svg,#character-svg{position:absolute;top:0;left:0;width:400px;height:300px;}
+    #character-svg{z-index:10;pointer-events:none;}
+    .heart{position:absolute;font-size:48px;color:#ff1493;text-shadow:0 0 35px #ff69b4;pointer-events:none;z-index:20;
+           animation:fly 1s ease-out forwards;}
+    @keyframes fly{to{transform:translate(var(--dx),var(--dy)) rotate(1080deg) scale(0);opacity:0;}}
+</style>
+</head>
+<body>
+
+<h1>LOVE MACHINE</h1>
+
+<div id="input-zone">
+    <label>Your lovely ID</label>
+    <input type="text" id="inscriptionId" placeholder="paste your love_message ID + press Enter">
+    <button onclick="loadInscription()">LOAD</button>
+</div>
+
+<div id="main">
+    <div id="instructions">
+        ← → Move<br>
+        ↑ Jump<br>
+        HOLD ENTER to SEND LOVE !
+    </div>
+
+    <div id="game-frame">
+        <div id="game" tabindex="0">
+            <svg id="scene-svg" viewBox="0 0 400 300"></svg>
+            <svg id="character-svg" viewBox="0 0 400 300"></svg>
+        </div>
+    </div>
+</div>
+
+<script>
+    const input = document.getElementById('inscriptionId');
+    const sceneSvg = document.getElementById('scene-svg');
+    const charSvg = document.getElementById('character-svg');
+    const instructions = document.getElementById('instructions');
+    const game = document.getElementById('game');
+
+    let x = 0, y = 0, vy = 0, jumping = false;
+    const keys = {};
+    let lastShot = 0;
+
+    // LIMITES LARGES : sort 1x la fenêtre (400px)
+    const MIN_X = -350;
+    const MAX_X = 350;
+
+    async function loadInscription() {
+        const id = input.value.trim();
+        if (!id) return;
+
+        try {
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent('https://ordinals.com/content/' + id)}`;
+            const resp = await fetch(proxyUrl);
+            const data = await resp.json();
+            let svgText = data.contents;
+
+            svgText = svgText.replace(/href="\/content\//g, 'href="https://ordinals.com/content/');
+
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(svgText, 'image/svg+xml');
+            const images = doc.querySelectorAll('image');
+            if (images.length < 6) return;
+
+            const sceneHTML = Array.from(images).slice(0, -1).map(img => {
+                const href = img.getAttribute('href');
+                return `<image href="${href}" width="400" height="300"/>`;
+            }).join('');
+
+            const charHref = images[images.length - 1].getAttribute('href');
+
+            sceneSvg.innerHTML = sceneHTML;
+            charSvg.innerHTML = `
+                <defs>
+                    <mask id="mask">
+                        <image href="${charHref}" width="400" height="300" style="filter:brightness(30);"/>
+                    </mask>
+                </defs>
+                <image href="${charHref}" width="400" height="300" mask="url(#mask)"/>
+            `;
+
+            instructions.classList.add('visible');
+            game.focus();
+            x = 0; y = 0; // Reset
+
+        } catch (e) { console.error(e); }
+    }
+
+    function shoot() {
+        if (Date.now() - lastShot < 70) return;
+        lastShot = Date.now();
+        const h = document.createElement('div');
+        h.className = 'heart';
+        h.textContent = '♥';
+        h.style.left = (210 + x) + 'px';
+        h.style.top = (260 + y) + 'px';
+        const a = Math.random() * Math.PI * 2;
+        const p = 280 + Math.random() * 380;
+        h.style.setProperty('--dx', Math.cos(a)*p + 'px');
+        h.style.setProperty('--dy', Math.sin(a)*p + 'px');
+        game.appendChild(h);
+        setTimeout(() => h.remove(), 1100);
+    }
+
+    function loop() {
+        // MOUVEMENT FLUIDE ET LARGE
+        if (keys.ArrowLeft) x -= 18;   // Plus rapide
+        if (keys.ArrowRight) x += 18;
+        x = Math.max(MIN_X, Math.min(MAX_X, x));  // Sort 1x la fenêtre
+
+        // SAUT NATUREL (sans limite haute artificielle)
+        if (jumping) {
+            y += vy;
+            vy += 0.8;  // Gravité plus douce
+            if (y >= 0 && vy >= 0) { 
+                y = 0; 
+                jumping = false; 
+                vy = 0; 
+            }
+        }
+
+        if (keys.Enter) shoot();
+        charSvg.style.transform = `translate(${x}px, ${y}px)`;
+        requestAnimationFrame(loop);
+    }
+
+    game.addEventListener('keydown', e => {
+        keys[e.code] = true;
+        if (e.code === 'ArrowUp' && !jumping) { 
+            jumping = true; 
+            vy = -20;  // Saut plus haut
+            e.preventDefault(); 
+        }
+        if (e.code === 'Enter') e.preventDefault();
+    });
+    game.addEventListener('keyup', e => keys[e.code] = false);
+
+    input.addEventListener('keypress', e => { if (e.key === 'Enter') loadInscription(); });
+
+    requestAnimationFrame(loop);
+</script>
+</body>
+</html>
