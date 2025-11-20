@@ -8,8 +8,14 @@
     *{box-sizing:border-box;margin:0;padding:0;}
     body{
         background:#000;color:#fff;font-family:'Comic Sans MS',cursive;
-        min-height:100vh;display:flex;flex-direction:column;overflow:hidden;
-        touch-action:manipulation;user-select:none;
+        min-height:100vh;
+        height:100vh;
+        display:flex;
+        flex-direction:column;
+        overflow-y:auto;               /* ← FIX in-app : permet le scroll */
+        touch-action:manipulation;
+        user-select:none;
+        -webkit-overflow-scrolling:touch; /* ← iOS scroll fluide */
     }
     h1{
         position:fixed;top:0;left:0;right:0;z-index:1000;
@@ -22,7 +28,8 @@
     #game-frame{
         width:100%;max-width:900px;aspect-ratio:800/632;
         border:16px solid #ff1493;border-radius:36px;
-        overflow:hidden;box-shadow:0 0 120px #ff1493,inset 0 0 90px rgba(255,20,147,0.8);
+        overflow:hidden;
+        box-shadow:0 0 120px #ff1493,inset 0 0 90px rgba(255,20,147,0.8);
         background:#000;position:relative;
     }
     @media (max-width:600px){
@@ -42,6 +49,9 @@
     #input-zone{
         padding:14px;background:rgba(0,0,0,0.95);text-align:center;
         border-top:4px solid #ff1493;
+        flex-shrink:0;                 /* ← ne se fait jamais écraser */
+        min-height:130px;              /* ← toujours visible même sur in-app */
+        padding-bottom:max(env(safe-area-inset-bottom), 20px);
     }
     input{
         width:100%;max-width:420px;padding:14px;background:#111;
@@ -50,7 +60,7 @@
     }
     button{
         margin-top:10px;padding:12px 32px;background:#ff1493;color:#000;
-        border:none;border-radius:12px;font-weight:bold;font-size:17px;
+        border:none;border-radius:12px;font-weight:bold;font-size:17px;cursor:pointer;
     }
     .heart-fly{
         position:fixed;pointer-events:none;z-index:9999;
@@ -101,14 +111,12 @@
     const inputField = document.getElementById('inscriptionId');
 
     const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    instructions.innerHTML = isMobile
-        ? ""
-        : "â† â†’ Move Â· â†‘ Jump Â· SPACE = SEND LOVE";
+    instructions.innerHTML = isMobile ? "" : "← → Move · ↑ Jump · SPACE = SEND LOVE";
 
     let x = 0, y = 0, vy = 0, jumping = false;
     let lastShot = 0;
     const permanentHearts = [];
-    const keys = {}; // â† Ã©tat des touches enfoncÃ©es
+    const keys = {};
 
     function clearHearts(){
         document.querySelectorAll('.heart-fly,.heart-permanent').forEach(h=>h.remove());
@@ -155,7 +163,7 @@
         for(let i=0;i<count;i++){
             const fly = document.createElement('div');
             fly.className='heart-fly';
-            fly.textContent='â™¥';
+            fly.textContent='♥';
             fly.style.left=baseX+'px';
             fly.style.top=baseY+'px';
             const dx=(Math.random()-0.5)*2400;
@@ -168,7 +176,7 @@
             if(Math.random()<0.3){
                 const perm=document.createElement('div');
                 perm.className='heart-permanent';
-                perm.textContent='â™¥';
+                perm.textContent='♥';
                 perm.style.left=(baseX+dx)+'px';
                 perm.style.top=(baseY+dy)+'px';
                 document.body.appendChild(perm);
@@ -179,7 +187,7 @@
         permanentHearts.forEach(p=>{
             const mini=document.createElement('div');
             mini.className='heart-fly';
-            mini.textContent='â™¥';
+            mini.textContent='♥';
             mini.style.fontSize='48px';
             mini.style.left=p.style.left;
             mini.style.top=p.style.top;
@@ -193,26 +201,23 @@
     }
 
     function loop(){
-        // Mouvement horizontal continu tant que touche enfoncÃ©e
         if(keys.ArrowLeft || keys.KeyA) x -= 18;
         if(keys.ArrowRight || keys.KeyD) x += 18;
         x = Math.max(-700, Math.min(700, x));
 
-        // Saut (â†‘ ou double-tap mobile)
         if(jumping){
             y += vy;
             vy += 1.4;
             if(y >= 0){ y = 0; jumping = false; vy = 0; }
         }
 
-        // Tir continu avec SPACE maintenu
         if(keys.Space) shoot();
 
         charSvg.style.transform = `translate(${x}px,${Math.max(y,-180)}px)`;
         requestAnimationFrame(loop);
     }
 
-    // Touch mobile (inchangÃ©)
+    // Touch mobile
     let touchId=null, touchStartX=0, lastTap=0, longPressTimer=null;
     game.addEventListener('touchstart',e=>{
         e.preventDefault();
@@ -241,7 +246,7 @@
 
     game.addEventListener('touchend',()=>{ if(touchId!==null){ touchId=null; clearTimeout(longPressTimer); }});
 
-    // Clavier â€“ toutes les touches se combinent parfaitement
+    // Clavier
     window.addEventListener('keydown', e => {
         if(!keys[e.code]){
             keys[e.code] = true;
@@ -255,6 +260,14 @@
     });
 
     inputField.addEventListener('keypress', e => { if(e.key==='Enter') loadInscription(); });
+
+    // FIX FINAL in-app browser (X/Twitter, etc.)
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            document.body.style.overflowY = 'auto';
+            window.scrollTo(0, 1); // force l'affichage complet sur certains in-app
+        }, 300);
+    });
 
     requestAnimationFrame(loop);
 </script>
