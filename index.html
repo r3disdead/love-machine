@@ -103,12 +103,12 @@
     const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     instructions.innerHTML = isMobile
         ? ""
-        : "← → Move · ↑ Jump · SPACE = SEND LOVE";
+        : "â† â†’ Move Â· â†‘ Jump Â· SPACE = SEND LOVE";
 
     let x = 0, y = 0, vy = 0, jumping = false;
     let lastShot = 0;
     const permanentHearts = [];
-    const keys = {}; // ← état des touches enfoncées
+    const keys = {}; // â† Ã©tat des touches enfoncÃ©es
 
     function clearHearts(){
         document.querySelectorAll('.heart-fly,.heart-permanent').forEach(h=>h.remove());
@@ -155,7 +155,7 @@
         for(let i=0;i<count;i++){
             const fly = document.createElement('div');
             fly.className='heart-fly';
-            fly.textContent='♥';
+            fly.textContent='â™¥';
             fly.style.left=baseX+'px';
             fly.style.top=baseY+'px';
             const dx=(Math.random()-0.5)*2400;
@@ -168,7 +168,7 @@
             if(Math.random()<0.3){
                 const perm=document.createElement('div');
                 perm.className='heart-permanent';
-                perm.textContent='♥';
+                perm.textContent='â™¥';
                 perm.style.left=(baseX+dx)+'px';
                 perm.style.top=(baseY+dy)+'px';
                 document.body.appendChild(perm);
@@ -179,7 +179,7 @@
         permanentHearts.forEach(p=>{
             const mini=document.createElement('div');
             mini.className='heart-fly';
-            mini.textContent='♥';
+            mini.textContent='â™¥';
             mini.style.fontSize='48px';
             mini.style.left=p.style.left;
             mini.style.top=p.style.top;
@@ -193,12 +193,12 @@
     }
 
     function loop(){
-        // Mouvement horizontal continu tant que touche enfoncée
+        // Mouvement horizontal continu tant que touche enfoncÃ©e
         if(keys.ArrowLeft || keys.KeyA) x -= 18;
         if(keys.ArrowRight || keys.KeyD) x += 18;
         x = Math.max(-700, Math.min(700, x));
 
-        // Saut (↑ ou double-tap mobile)
+        // Saut (â†‘ ou double-tap mobile)
         if(jumping){
             y += vy;
             vy += 1.4;
@@ -212,7 +212,7 @@
         requestAnimationFrame(loop);
     }
 
-    // Touch mobile (inchangé)
+    // Touch mobile (inchangÃ©)
     let touchId=null, touchStartX=0, lastTap=0, longPressTimer=null;
     game.addEventListener('touchstart',e=>{
         e.preventDefault();
@@ -241,7 +241,7 @@
 
     game.addEventListener('touchend',()=>{ if(touchId!==null){ touchId=null; clearTimeout(longPressTimer); }});
 
-    // Clavier – toutes les touches se combinent parfaitement
+    // Clavier â€“ toutes les touches se combinent parfaitement
     window.addEventListener('keydown', e => {
         if(!keys[e.code]){
             keys[e.code] = true;
@@ -260,4 +260,3 @@
 </script>
 </body>
 </html>
-
