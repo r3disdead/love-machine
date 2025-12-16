@@ -215,7 +215,7 @@
 
         if(keys.Space) shoot();
 
-        charSvg.style.transform = `translate(${x}px,${Math.max(y,-180)}px)`;
+        charSvg.style.transform = `translate(${x}px,${y}px)`;  // No Math.max!
         requestAnimationFrame(loop);
     }
 
@@ -228,7 +228,7 @@
             touchId=t.identifier;
             touchStartX=t.clientX;
             const now=Date.now();
-            if(now-lastTap<320){ if(!jumping){ jumping=true; vy=-22; }}
+            if(now-lastTap<320){ if(!jumping){ jumping=true; vy=-30; }}
             lastTap=now;
             clearTimeout(longPressTimer);
             longPressTimer=setTimeout(()=>{shoot();},500);
@@ -240,7 +240,7 @@
         for(const t of e.changedTouches){
             if(t.identifier!==touchId) continue;
             const delta=t.clientX-touchStartX;
-            x += delta/4;
+            x += delta/2;
             touchStartX = t.clientX;
             x = Math.max(-700, Math.min(700, x));
         }
@@ -252,7 +252,7 @@
     window.addEventListener('keydown', e => {
         if(!keys[e.code]){
             keys[e.code] = true;
-            if(e.code === 'ArrowUp' && !jumping){ jumping = true; vy = -22; }
+            if(e.code === 'ArrowUp' && !jumping){ jumping = true; vy = -30; }
             if(e.code === 'Space'){ e.preventDefault(); shoot(); }
         }
     });
