@@ -149,7 +149,7 @@
         const id = inputField.value.trim();
         if(!id) return;
         try{
-            const resp = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://ordinals.com/content/' + id)}`);
+            const resp = await fetch(`https://corsproxy.io/?${encodeURIComponent('https://ordinals.com/content/' + id)}`);
             if(!resp.ok) throw new Error('Fetch failed');
             let svgText = await resp.text();
             svgText = svgText.replace(/href="\/content\//g,'href="https://ordinals.com/content/');
